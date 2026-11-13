@@ -2,7 +2,7 @@ import { resolveWritableField } from "../utils/tableFields.js";
 import { bitable, DateFormatter, FieldType, NumberFormatter } from "@lark-base-open/js-sdk";
 import { ElMessage } from "element-plus";
 import { ref, onUnmounted } from "vue";
-import request, { buildApiUrl } from '@/utils/request'
+import { feishuRequest as request, buildFeishuApiUrl, buildFeishuApiPath } from '@/utils/request'
 
 export const FIELD_MAPPING = [
   { key: 'aweme_id', name: '视频编号', type: FieldType.Text, defaultSelected: true, required: true },
@@ -262,7 +262,7 @@ const downloadAttachmentAsFile = async (url, fileName, apiKey, xhsCover = false)
   const timeoutId = setTimeout(() => controller.abort(), ATTACHMENT_DOWNLOAD_TIMEOUT);
   const proxyParams = new URLSearchParams({ url, file_name: fileName });
   if (xhsCover) proxyParams.set('image_mode', 'xhs_cover');
-  const proxyUrl = buildApiUrl(`/social/api/v1/feishu/xhs_download_proxy?${proxyParams.toString()}`);
+  const proxyUrl = buildFeishuApiUrl(`${buildFeishuApiPath('/v1/feishu/xhs_download_proxy')}?${proxyParams.toString()}`);
   const download = async (requestUrl, useProxy = false) => {
     const response = await fetch(requestUrl, {
       signal: controller.signal,
@@ -727,7 +727,7 @@ export const useSocialData = (getTableName, api_key, fieldMapping = FIELD_MAPPIN
 
   const getList = async (task_id, type, targetTableId = "", selectedFieldKeys = []) => {
     await request({
-      url: "/social/api/v1/feishu/post/list",
+      url: buildFeishuApiPath('/v1/feishu/post/list'),
       method: "post",
       headers: { 'authorization': `Bearer ${api_key}` },
       data: { task_id, page, page_size },

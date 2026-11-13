@@ -1,9 +1,8 @@
 <script setup>
-import axios from 'axios';
 import { bitable } from '@lark-base-open/js-sdk';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
-import request, { buildApiUrl } from '@/utils/request';
+import { feishuRequest as request, buildFeishuApiPath } from '@/utils/request';
 import { getDefaultSelectedFieldKeys } from '@/composables/useSocialData';
 import { SUGGESTION_FIELD_MAPPING, useSuggestionData } from '@/composables/useSuggestionData';
 import TaskFeedback from './TaskFeedback.vue';
@@ -16,8 +15,8 @@ const assertActive = () => { if (disposed) throw new Error('页面已卸载'); }
 onUnmounted(() => { disposed = true; });
 
 const TASK_PLUGIN_TYPE = 'search_suggestions';
-const TABLE_CONFIG_API_PATH = '/social/api/v1/feishu/profile-fetch/table-output-config';
-const TABLE_CONFIGS_API_PATH = '/social/api/v1/feishu/profile-fetch/table-output-configs';
+const TABLE_CONFIG_API_PATH = buildFeishuApiPath('/v1/feishu/profile-fetch/table-output-config');
+const TABLE_CONFIGS_API_PATH = buildFeishuApiPath('/v1/feishu/profile-fetch/table-output-configs');
 const FIELD_SELECTION_STORAGE_KEY = 'search_suggestions_selected_fields_v1';
 
 const PLATFORM_OPTIONS = [
@@ -249,11 +248,11 @@ const getMappingTargetFields = index => {
 };
 
 const fetchSuggestions = async keyword => {
-  const response = await axios.post(
-    buildApiUrl('/social/api/v1/feishu/search/suggestions'),
-    { social_type: form.value.social_type, keyword },
-    { timeout: 60000, headers: { authorization: `Bearer ${props.api_key}` } },
-  );
+  const response = await request({
+    url: buildFeishuApiPath('/v1/feishu/search/suggestions'), method: 'post',
+    data: { social_type: form.value.social_type, keyword },
+    timeout: 60000, headers: { authorization: `Bearer ${props.api_key}` },
+  });
   const result = response.data;
   if (result?.sta !== 0) {
     const error = new Error(result?.msg || '获取推荐词失败');

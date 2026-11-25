@@ -9,6 +9,31 @@ function setupReadyView(component) {
   return view;
 }
 
+test('多关键词请求和最终写表共用首次请求前的字段选择', async () => {
+  const host = await loadModules(['/src/components/SearchSuggestions.vue'], 'development', { mockAxios: true });
+  try {
+    const view = setupReadyView(host.modules[0].default);
+    view.form.value.keyword = '猫,狗';
+    view.selectedFieldKeys.value = ['keyword', 'recommendation', 'description'];
+    const bodies = [];
+    host.state.axiosHandler = async ({ data }) => {
+      bodies.push(structuredClone(data));
+      if (bodies.length === 1) view.selectedFieldKeys.value.push('suggestion_label');
+      return { data: { sta: 0, data: { items: [{ recommendation: '推荐词', description: '说明', suggestion_label: '标记' }] } } };
+    };
+    await view.submit();
+    assert.deepEqual(bodies, [
+      { social_type: 'xhs', keyword: '猫', selected_field_keys: ['keyword', 'recommendation', 'description'] },
+      { social_type: 'xhs', keyword: '狗', selected_field_keys: ['keyword', 'recommendation', 'description'] },
+    ]);
+    const [table] = host.state.tables;
+    assert.deepEqual(table.fields.map(field => field.name), ['搜索关键词', '推荐词', '补充说明']);
+    assert.equal(table.records.length, 2);
+    const descriptionField = table.fields.find(field => field.name === '补充说明');
+    assert.deepEqual(table.records.map(record => record.fields[descriptionField.id]), ['说明', '说明']);
+  } finally { await host.close(); }
+});
+
 test('核对按出现次数补写相同内容，超出预期的新增匹配则停止', async t => {
   for (const ambiguous of [false, true]) {
     await t.test(ambiguous ? '新增匹配多于预期' : '本批允许两行相同内容', async () => {

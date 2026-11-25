@@ -19,7 +19,7 @@ for (const [mode, base] of [['production', 'https://api.socialdatax.com'], ['tes
     const view = host.modules[0].default.setup({ api_key: 'test-only' }, { emit() {}, expose() {} });
     view.fieldSelectionReady.value = true;
     view.form.value.social_type = 'xhs';
-    const rows = await view.fetchSuggestions('猫');
+    const rows = await view.fetchSuggestions('猫', ['keyword', 'recommendation', 'description']);
     assert.deepEqual(rows, [{ recommendation: '猫粮', description: '说明' }]);
     await view.loadTableOutputConfigs();
     await view.saveTableOutputConfig({ targetTableId: 'target', writeMode: 'append', fieldMappings: [{ source_key: 'keyword', target_field_id: 'kw' }] });
@@ -29,7 +29,7 @@ for (const [mode, base] of [['production', 'https://api.socialdatax.com'], ['tes
       '/socialdatax/api/v1/feishu/profile-fetch/table-output-config',
     ]);
     assert.ok(calls.every(c => c.baseURL === base && c.headers.authorization === 'Bearer test-only'));
-    assert.deepEqual(calls[0].data, { social_type: 'xhs', keyword: '猫', version: 'web-10.29' });
+    assert.deepEqual(calls[0].data, { social_type: 'xhs', keyword: '猫', selected_field_keys: ['keyword', 'recommendation', 'description'], version: 'web-10.29' });
     assert.equal(calls[1].params.plugin_type, 'search_suggestions');
     assert.equal(calls[2].data.target_table_id, 'target');
     assert.deepEqual(calls[2].data.field_mappings, [{ source_key: 'keyword', target_field_id: 'kw' }]);
